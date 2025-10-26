@@ -1,0 +1,188 @@
+-- LocalScript
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Create ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ActiveCharactersGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+-- Create main draggable frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 260, 0, 320)
+mainFrame.Position = UDim2.new(0, 50, 0, 150)
+mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+
+-- Title bar
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
+title.Text = "Active Characters"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 20
+title.Parent = mainFrame
+
+-- Create a scrolling frame to list bools
+local scrollingFrame = Instance.new("ScrollingFrame")
+scrollingFrame.Size = UDim2.new(1, -10, 1, -40)
+scrollingFrame.Position = UDim2.new(0, 5, 0, 35)
+scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+scrollingFrame.ScrollBarThickness = 8
+scrollingFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+scrollingFrame.BackgroundTransparency = 0.1
+scrollingFrame.Parent = mainFrame
+
+-- Helper: create a label
+local function createLabel(text, yPos)
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, -10, 0, 24)
+	label.Position = UDim2.new(0, 5, 0, yPos)
+	label.BackgroundTransparency = 1
+	label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Font = Enum.Font.SourceSans
+	label.TextSize = 20
+	label.Text = text
+	label.Parent = scrollingFrame
+end
+
+-- Function to refresh GUI
+local function updateList()
+	-- Clear old text
+	for _, child in ipairs(scrollingFrame:GetChildren()) do
+		if child:IsA("TextLabel") then
+			child:Destroy()
+		end
+	end
+
+	local folder = workspace:FindFirstChild("FolderActiveCharacters")
+	if not folder then
+		warn("⚠️ FolderActiveCharacters not found in workspace!")
+		return
+	end
+
+	local y = 0
+	for _, item in ipairs(folder:GetChildren()) do
+		if item:IsA("BoolValue") and item.Value == true then
+			createLabel(item.Name, y)
+			y += 26
+		end
+	end
+	scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, y)
+end
+
+-- Refresh every 10 seconds
+task.spawn(function()
+	while true do
+		updateList()
+		task.wait(10)
+	end
+end)
+
+-- Instant updates on change
+local function connectListeners()
+	local folder = workspace:WaitForChild("FolderActiveCharacters")
+	folder.ChildAdded:Connect(function(child)
+		if child:IsA("BoolValue") then
+			child.Changed:Connect(updateList)
+			updateList()
+		end
+	end)
+	folder.ChildRemoved:Connect(updateList)
+	for _, bool in ipairs(folder:GetChildren()) do
+		if bool:IsA("BoolValue") then
+			bool.Changed:Connect(updateList)
+		end
+	end
+end
+
+connectListeners()
+updateList()
+
+-- LocalScript
+
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- // GUI CREATION
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "NameTagsToggleGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 160, 0, 60)
+mainFrame.Position = UDim2.new(0, 100, 0, 200)
+mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 25)
+title.BackgroundTransparency = 1
+title.Text = "NameTags Switch"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 18
+title.Parent = mainFrame
+
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 120, 0, 25)
+toggleButton.Position = UDim2.new(0.5, -60, 1, -30)
+toggleButton.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+toggleButton.Text = "OFF"
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Font = Enum.Font.SourceSansBold
+toggleButton.TextSize = 18
+toggleButton.Parent = mainFrame
+
+-- // FUNCTIONALITY
+local toggled = false
+
+local function setAllComments(enabled)
+	local folder = workspace:FindFirstChild("FolderNameTags")
+	if not folder then
+		warn("⚠️ FolderNameTags not found in workspace!")
+		return
+	end
+
+	for _, obj in ipairs(folder:GetChildren()) do
+		-- Adjust to your setup:
+		-- If these are BillboardGuis, SurfaceGuis, or similar, they usually have an "Enabled" property.
+		if obj:IsA("BillboardGui") or obj:IsA("SurfaceGui") or obj:FindFirstChildWhichIsA("BillboardGui") then
+			-- If it’s a direct GUI
+			if obj:IsA("BillboardGui") or obj:IsA("SurfaceGui") then
+				obj.Enabled = enabled
+			else
+				-- If the Gui is a child of a model
+				for _, gui in ipairs(obj:GetChildren()) do
+					if gui:IsA("BillboardGui") or gui:IsA("SurfaceGui") then
+						gui.Enabled = enabled
+					end
+				end
+			end
+		end
+	end
+end
+
+local function toggleSwitch()
+	toggled = not toggled
+	if toggled then
+		toggleButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+		toggleButton.Text = "ON"
+	else
+		toggleButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+		toggleButton.Text = "OFF"
+	end
+	setAllComments(toggled)
+end
+
+toggleButton.MouseButton1Click:Connect(toggleSwitch)
