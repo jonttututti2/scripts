@@ -106,19 +106,18 @@ connectListeners()
 updateList()
 
 -- LocalScript
-
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- // GUI CREATION
+-- === GUI CREATION ===
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "NameTagsToggleGui"
+screenGui.Name = "NameTagManagerGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 160, 0, 60)
-mainFrame.Position = UDim2.new(0, 100, 0, 200)
+mainFrame.Size = UDim2.new(0, 220, 0, 70)
+mainFrame.Position = UDim2.new(0, 50, 0, 250)
 mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 mainFrame.BorderSizePixel = 0
 mainFrame.Active = true
@@ -135,8 +134,8 @@ title.TextSize = 18
 title.Parent = mainFrame
 
 local toggleButton = Instance.new("TextButton")
-toggleButton.Size = UDim2.new(0, 120, 0, 25)
-toggleButton.Position = UDim2.new(0.5, -60, 1, -30)
+toggleButton.Size = UDim2.new(0, 130, 0, 30)
+toggleButton.Position = UDim2.new(0.5, -65, 1, -35)
 toggleButton.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
 toggleButton.Text = "OFF"
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -144,76 +143,89 @@ toggleButton.Font = Enum.Font.SourceSansBold
 toggleButton.TextSize = 18
 toggleButton.Parent = mainFrame
 
--- // TOGGLE FUNCTIONALITY
+-- === VARIABLES ===
 local toggled = false
+local updateLoop = nil
 
--- Helper: toggle all name tags
-local function setAllComments(enabled)
+-- === FUNCTIONS FOR NAMETAGS ===
+local function setNameTagsEnabled(state)
 	local folder = workspace:FindFirstChild("FolderNameTags")
-	if not folder then
-		warn("⚠️ FolderNameTags not found in workspace!")
-		return
-	end
-
+	if not folder then return end
 	for _, obj in ipairs(folder:GetChildren()) do
 		if obj:IsA("BillboardGui") or obj:IsA("SurfaceGui") then
-			obj.Enabled = enabled
-		elseif obj:FindFirstChildWhichIsA("BillboardGui") then
+			obj.Enabled = state
+		elseif obj:IsA("Folder") then
 			for _, gui in ipairs(obj:GetChildren()) do
 				if gui:IsA("BillboardGui") or gui:IsA("SurfaceGui") then
-					gui.Enabled = enabled
+					gui.Enabled = state
 				end
 			end
 		end
 	end
 end
 
--- Helper: add highlights to active animatronics
-local function applyHighlights(enabled)
-	local activeFolder = workspace:FindFirstChild("FolderActiveCharacters")
-	if not activeFolder then
-		warn("⚠️ FolderActiveCharacters not found!")
-		return
+-- === FUNCTIONS FOR ACTIVECHARACTER HIGHLIGHTS ===
+local function clearHighlights()
+	for _, obj in ipairs(workspace:GetChildren()) do
+		if obj:IsA("Model") or obj:IsA("Part") then
+			local hl = obj:FindFirstChild("ActiveHighlight")
+			if hl then hl:Destroy() end
+		end
 	end
+end
 
-	for _, boolValue in ipairs(activeFolder:GetChildren()) do
-		if boolValue:IsA("BoolValue") then
-			local model = workspace:FindFirstChild(boolValue.Name)
-			if model and model:IsA("Model") then
-				if enabled and boolValue.Value == true then
-					-- Add highlight if not present
-					if not model:FindFirstChild("ActiveHighlight") then
-						local hl = Instance.new("Highlight")
-						hl.Name = "ActiveHighlight"
-						hl.FillTransparency = 1
-						hl.OutlineTransparency = 0.1
-						hl.Parent = model
-					end
-				else
-					-- Remove highlight if turning off
-					local hl = model:FindFirstChild("ActiveHighlight")
-					if hl then
-						hl:Destroy()
-					end
-				end
+local function updateHighlights()
+	local folder = workspace:FindFirstChild("FolderActiveCharacters")
+	if not folder then return end
+	for _, boolVal in ipairs(folder:GetChildren()) do
+		if boolVal:IsA("BoolValue") and boolVal.Value == true then
+			local model = workspace:FindFirstChild(boolVal.Name)
+			if model and not model:FindFirstChild("ActiveHighlight") then
+				local hl = Instance.new("Highlight")
+				hl.Name = "ActiveHighlight"
+				hl.FillColor = Color3.fromRGB(255, 0, 0)
+				hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+				hl.FillTransparency = 0.9
+				hl.OutlineTransparency = 0.1
+				hl.Parent = model
 			end
 		end
 	end
 end
 
+-- === MASTER UPDATE LOOP ===
+local function performUpdate()
+	if toggled then
+		setNameTagsEnabled(true)
+		clearHighlights()
+		updateHighlights()
+	else
+		setNameTagsEnabled(false)
+		clearHighlights()
+	end
+end
+
+-- === TOGGLE SWITCH ===
 local function toggleSwitch()
 	toggled = not toggled
 
 	if toggled then
 		toggleButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
 		toggleButton.Text = "ON"
+
+		performUpdate()
+
+		updateLoop = task.spawn(function()
+			while toggled do
+				performUpdate()
+				task.wait(10) -- recheck every 10 seconds
+			end
+		end)
 	else
 		toggleButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
 		toggleButton.Text = "OFF"
+		performUpdate() -- disable tags and highlights
 	end
-
-	setAllComments(toggled)
-	applyHighlights(toggled)
 end
 
 toggleButton.MouseButton1Click:Connect(toggleSwitch)
@@ -279,7 +291,7 @@ local function addHighlightTo(item, color)
 		hl.Name = "ItemHighlight"
 		hl.FillColor = color
 		hl.OutlineColor = color
-		hl.FillTransparency = 0.8
+		hl.FillTransparency = 0.6
 		hl.OutlineTransparency = 0.9
 		hl.Parent = item
 	end
