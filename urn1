@@ -128,7 +128,7 @@ mainFrame.Parent = screenGui
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 25)
 title.BackgroundTransparency = 1
-title.Text = "NameTags Switch"
+title.Text = "ESP"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.Font = Enum.Font.SourceSansBold
 title.TextSize = 18
@@ -214,6 +214,197 @@ local function toggleSwitch()
 
 	setAllComments(toggled)
 	applyHighlights(toggled)
+end
+
+toggleButton.MouseButton1Click:Connect(toggleSwitch)
+
+-- LocalScript
+
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- === GUI CREATION ===
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ItemHighlightGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 180, 0, 60)
+mainFrame.Position = UDim2.new(0, 300, 0, 200)
+mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 25)
+title.BackgroundTransparency = 1
+title.Text = "Item ESP"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 18
+title.Parent = mainFrame
+
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 120, 0, 25)
+toggleButton.Position = UDim2.new(0.5, -60, 1, -30)
+toggleButton.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+toggleButton.Text = "OFF"
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Font = Enum.Font.SourceSansBold
+toggleButton.TextSize = 18
+toggleButton.Parent = mainFrame
+
+-- === VARIABLES ===
+local toggled = false
+local highlightLoop = nil
+
+-- === COLOR MAP ===
+local itemColors = {
+	ItemCoin = Color3.fromRGB(255, 255, 0),         -- Yellow
+	ItemNachos = Color3.fromRGB(255, 170, 0),       -- Orange
+	ItemPartyCupcake = Color3.fromRGB(255, 105, 180), -- Pink
+	Freddle1 = Color3.fromRGB(255, 0, 255),        -- Cyan
+	Freddle2 = Color3.fromRGB(255, 0, 255),        -- Magenta
+	Freddle3 = Color3.fromRGB(255, 0, 255)         -- White
+}
+
+-- === HELPER FUNCTIONS ===
+local function addHighlightTo(item, color)
+	if not item or not item:IsDescendantOf(workspace) then return end
+	if not item:FindFirstChild("ItemHighlight") then
+		local hl = Instance.new("Highlight")
+		hl.Name = "ItemHighlight"
+		hl.FillColor = color
+		hl.OutlineColor = color
+		hl.FillTransparency = 0.8
+		hl.OutlineTransparency = 0.9
+		hl.Parent = item
+	end
+end
+
+local function removeHighlights()
+	for _, obj in ipairs(workspace:GetChildren()) do
+		if obj:IsA("Model") or obj:IsA("Part") then
+			local hl = obj:FindFirstChild("ItemHighlight")
+			if hl then
+				hl:Destroy()
+			end
+		end
+	end
+end
+
+local function checkSpecificItems()
+	for itemName, color in pairs(itemColors) do
+		local item = workspace:FindFirstChild(itemName)
+		if item then
+			addHighlightTo(item, color)
+		end
+	end
+end
+
+-- === TOGGLE FUNCTION ===
+local function toggleSwitch()
+	toggled = not toggled
+
+	if toggled then
+		toggleButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+		toggleButton.Text = "ON"
+
+		highlightLoop = task.spawn(function()
+			while toggled do
+				checkSpecificItems()
+				task.wait(2) -- recheck every 2 seconds
+			end
+		end)
+	else
+		toggleButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+		toggleButton.Text = "OFF"
+		removeHighlights()
+	end
+end
+
+toggleButton.MouseButton1Click:Connect(toggleSwitch)
+
+-- LocalScript
+
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- === GUI CREATION ===
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AutoClickGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 180, 0, 60)
+mainFrame.Position = UDim2.new(0, 500, 0, 200)
+mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 25)
+title.BackgroundTransparency = 1
+title.Text = "Auto Click Items(wip)"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 18
+title.Parent = mainFrame
+
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 120, 0, 25)
+toggleButton.Position = UDim2.new(0.5, -60, 1, -30)
+toggleButton.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+toggleButton.Text = "OFF"
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Font = Enum.Font.SourceSansBold
+toggleButton.TextSize = 18
+toggleButton.Parent = mainFrame
+
+-- === VARIABLES ===
+local toggled = false
+local clickLoop = nil
+
+-- === ITEM NAMES TO SEARCH ===
+local itemNames = {"ItemPartyCupcake", "ItemNachos", "ItemCoin"}
+
+-- === HELPER FUNCTIONS ===
+local function clickItems()
+	for _, itemName in ipairs(itemNames) do
+		local item = workspace:FindFirstChild(itemName)
+		if item then
+			for _, descendant in ipairs(item:GetDescendants()) do
+				if descendant:IsA("ClickDetector") then
+					fireclickdetector(descendant)
+				end
+			end
+		end
+	end
+end
+
+local function toggleSwitch()
+	toggled = not toggled
+
+	if toggled then
+		toggleButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+		toggleButton.Text = "ON"
+
+		clickLoop = task.spawn(function()
+			while toggled do
+				clickItems()
+				task.wait(1.5) -- tries every 1.5 seconds
+			end
+		end)
+	else
+		toggleButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+		toggleButton.Text = "OFF"
+	end
 end
 
 toggleButton.MouseButton1Click:Connect(toggleSwitch)
