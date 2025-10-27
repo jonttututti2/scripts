@@ -185,8 +185,8 @@ local function updateHighlights()
 				hl.Name = "ActiveHighlight"
 				hl.FillColor = Color3.fromRGB(255, 0, 0)
 				hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-				hl.FillTransparency = 0
-				hl.OutlineTransparency = 0.3
+				hl.FillTransparency = 1
+				hl.OutlineTransparency = 1
 				hl.Parent = model
 			end
 		end
