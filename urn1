@@ -144,9 +144,10 @@ toggleButton.Font = Enum.Font.SourceSansBold
 toggleButton.TextSize = 18
 toggleButton.Parent = mainFrame
 
--- // FUNCTIONALITY
+-- // TOGGLE FUNCTIONALITY
 local toggled = false
 
+-- Helper: toggle all name tags
 local function setAllComments(enabled)
 	local folder = workspace:FindFirstChild("FolderNameTags")
 	if not folder then
@@ -155,17 +156,44 @@ local function setAllComments(enabled)
 	end
 
 	for _, obj in ipairs(folder:GetChildren()) do
-		-- Adjust to your setup:
-		-- If these are BillboardGuis, SurfaceGuis, or similar, they usually have an "Enabled" property.
-		if obj:IsA("BillboardGui") or obj:IsA("SurfaceGui") or obj:FindFirstChildWhichIsA("BillboardGui") then
-			-- If it’s a direct GUI
-			if obj:IsA("BillboardGui") or obj:IsA("SurfaceGui") then
-				obj.Enabled = enabled
-			else
-				-- If the Gui is a child of a model
-				for _, gui in ipairs(obj:GetChildren()) do
-					if gui:IsA("BillboardGui") or gui:IsA("SurfaceGui") then
-						gui.Enabled = enabled
+		if obj:IsA("BillboardGui") or obj:IsA("SurfaceGui") then
+			obj.Enabled = enabled
+		elseif obj:FindFirstChildWhichIsA("BillboardGui") then
+			for _, gui in ipairs(obj:GetChildren()) do
+				if gui:IsA("BillboardGui") or gui:IsA("SurfaceGui") then
+					gui.Enabled = enabled
+				end
+			end
+		end
+	end
+end
+
+-- Helper: add highlights to active animatronics
+local function applyHighlights(enabled)
+	local activeFolder = workspace:FindFirstChild("FolderActiveCharacters")
+	if not activeFolder then
+		warn("⚠️ FolderActiveCharacters not found!")
+		return
+	end
+
+	for _, boolValue in ipairs(activeFolder:GetChildren()) do
+		if boolValue:IsA("BoolValue") then
+			local model = workspace:FindFirstChild(boolValue.Name)
+			if model and model:IsA("Model") then
+				if enabled and boolValue.Value == true then
+					-- Add highlight if not present
+					if not model:FindFirstChild("ActiveHighlight") then
+						local hl = Instance.new("Highlight")
+						hl.Name = "ActiveHighlight"
+						hl.FillTransparency = 1
+						hl.OutlineTransparency = 0.1
+						hl.Parent = model
+					end
+				else
+					-- Remove highlight if turning off
+					local hl = model:FindFirstChild("ActiveHighlight")
+					if hl then
+						hl:Destroy()
 					end
 				end
 			end
@@ -175,6 +203,7 @@ end
 
 local function toggleSwitch()
 	toggled = not toggled
+
 	if toggled then
 		toggleButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
 		toggleButton.Text = "ON"
@@ -182,7 +211,9 @@ local function toggleSwitch()
 		toggleButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
 		toggleButton.Text = "OFF"
 	end
+
 	setAllComments(toggled)
+	applyHighlights(toggled)
 end
 
 toggleButton.MouseButton1Click:Connect(toggleSwitch)
