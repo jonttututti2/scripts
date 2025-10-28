@@ -280,7 +280,7 @@ local itemColors = {
 	ItemPartyCupcake = Color3.fromRGB(255, 105, 180), -- Pink
 	Freddle1 = Color3.fromRGB(255, 0, 255),        -- Cyan
 	Freddle2 = Color3.fromRGB(255, 0, 255),        -- Magenta
-	Freddle3 = Color3.fromRGB(255, 0, 255)         -- White
+	Freddle3 = Color3.fromRGB(255, 0, 255),         -- White
 	Parrot = Color3.fromRGB(0, 255, 0)         
 }
 
